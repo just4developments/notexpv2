@@ -1,5 +1,5 @@
 import {Component, Input, OnInit, Output, OnDestroy} from '@angular/core';
-import {ModalController, AlertController, NavController, Events} from 'ionic-angular';
+import {ModalController, AlertController, NavController, Events, MenuController, LoadingController, Loading} from 'ionic-angular';
 import {DataProviderService} from '../../data-provider.service';
 import {FBConnector} from './FBConnector';
 import {SetupComponent} from './';
@@ -14,22 +14,7 @@ declare var FB: any;
     </ion-navbar>
   </ion-header>
   <ion-content>     
-    <ion-grid>
-      <ion-row>
-        <ion-col width-100>
-          <ion-list radio-group>
-            <ion-list-header>Language</ion-list-header>
-            <ion-item>
-              <ion-label>English</ion-label>
-              <ion-radio value="en"></ion-radio>
-            </ion-item>
-            <ion-item>
-              <ion-label>Vietnamese</ion-label>
-              <ion-radio value="vi"></ion-radio>
-            </ion-item>
-          </ion-list>
-        </ion-col>
-      </ion-row>
+    <ion-grid>      
       <ion-row>
         <ion-col width-50 align="center">
           <button (click)="loginF()" fab><ion-icon name="logo-facebook"></ion-icon></button>
@@ -44,7 +29,11 @@ declare var FB: any;
 })
 export class LoginPage implements OnDestroy {
   static isLogin:boolean;
-  constructor(private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){     
+  loader: Loading;
+
+  constructor(loadingController: LoadingController, private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){     
+    this.menuController.enable(false);
+
     var fbCon: FBConnector = new FBConnector();
     fbCon.initFB();
 
@@ -59,6 +48,11 @@ export class LoginPage implements OnDestroy {
       console.log(`Synced ${data[0]} records to server`);
       this.loginDone();
     });
+
+    this.loader = loadingController.create({
+      content: "Please wait..."
+    });
+
   }
 
   ngOnDestroy(){
@@ -91,10 +85,11 @@ export class LoginPage implements OnDestroy {
   }
 
   login(user, isFirst){
-    // user.email = 'have.ice@gmail.com';
+    // user.email = 'have.ice@gmail.com';    
     var self = this;
     let modal = this.modalController.create(SetupComponent, {me: user});
     modal.onDidDismiss(lang => {
+      this.loader.present();
       user.lang = lang;
       user.symb = user.lang === 'vi' ? 'VND' : 'USD';  
       this.dataProviderService.setMe(user);
@@ -116,7 +111,8 @@ export class LoginPage implements OnDestroy {
     this.events.publish('sync:from');
   }
 
-  loginDone(){     
+  loginDone(){
+    this.loader.dismiss();
     if(LoginPage.isLogin) this.navController.setRoot(DashBoardPage);
   }
 
@@ -134,6 +130,10 @@ export class LoginPage implements OnDestroy {
 
   loginG(){
     
+  }
+
+  onPageWillLeave() {
+    this.menuController.enable(true);
   }
 
 }

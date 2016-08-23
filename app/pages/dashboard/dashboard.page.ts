@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {NavController, NavParams, ModalController} from 'ionic-angular';
+import {NavController, NavParams, ModalController, LoadingController, Loading} from 'ionic-angular';
 import {DataProviderService} from '../../data-provider.service';
 import {ListSpendingComponent} from './list-spendings.component';
 import {ReportSpendingComponent} from './report-spending.component';
@@ -9,6 +9,7 @@ import {Utils} from '../../utils.service';
 @Component({
   template: `<ion-header>
 	  <ion-navbar>
+		  <button menuToggle><ion-icon name="menu"></ion-icon></button>
 	    <ion-title>DASHBOARD</ion-title>
 	  </ion-navbar>
 	</ion-header>
@@ -30,13 +31,17 @@ export class DashBoardPage {
 	spendings: Array<any>;
 	typespendings: Array<any>;
 	wallets: Array<any>;
-	now = new Date();	
+	now = new Date();
 
-  constructor(private modalController: ModalController, private navCtrl: NavController, private dataProviderService: DataProviderService, private navPrams: NavParams) {  	
+  constructor(private loadingController: LoadingController, private modalController: ModalController, private navCtrl: NavController, private dataProviderService: DataProviderService, private navPrams: NavParams) {  	
   	this.loadData(this.now.getMonth(), this.now.getFullYear());
   }
 
   loadData(month:number, year:number){
+  	var loader = this.loadingController.create({
+      content: "Please wait..."
+    });
+  	loader.present();
   	this.spendings = new Array<any>();
   	var totalSpendings = { earning: 0, spending: 0, remaining: 0, month: month, year: year};
   	this.dataProviderService.Wallet.select().then(resp => {
@@ -68,6 +73,7 @@ export class DashBoardPage {
 		  		}
 		  		totalSpendings.remaining = totalSpendings.earning - totalSpendings.spending;
 		  		this.totalSpendings = totalSpendings;
+		  		loader.dismiss();
 		  	}, error => { console.error(error); });
 	  	});
 	  }, error => { console.error(error); });

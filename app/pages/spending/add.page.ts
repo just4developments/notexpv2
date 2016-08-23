@@ -10,6 +10,7 @@ import {ConvertPipe} from '../../utils.pipe';
 @Component({
   template: `<ion-header>
 	  <ion-navbar>
+	  	<button menuToggle><ion-icon name="menu"></ion-icon></button>
 	    <ion-title>SPENDING TODAY ?</ion-title>
 	  </ion-navbar>
 	</ion-header>

@@ -6,6 +6,7 @@ import {UpdateWalletComponent} from './';
 @Component({
   template: `<ion-header>
     <ion-navbar>
+      <button menuToggle><ion-icon name="menu"></ion-icon></button>
       <ion-title>MANAGEMENT <small>WALLET</small></ion-title>
     </ion-navbar>
   </ion-header>
