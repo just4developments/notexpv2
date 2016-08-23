@@ -1,0 +1,89 @@
+// http://ionicframework.com/docs/v2/theming/
+
+
+// App Shared Imports
+// --------------------------------------------------
+// These are the imports which make up the design of this app.
+// By default each design mode includes these shared imports.
+// App Shared Sass variables belong in app.variables.scss.
+
+ul.title {
+  list-style-type: circle; 
+  padding: 8px 8px !important; 
+  background-color: #334D5C; 
+  font-size: 0.9em;
+  color: #ccc; 
+  margin: 0;
+}, 
+ul.title li { 
+  margin-left: 16px; 
+  line-height: 1.2em; 
+}
+.bg-image36 .ico {
+  background-image: url(/img/icons.png);
+  background-size: 756px 756px !important;
+  background-repeat: no-repeat !important;
+  float: left !important;
+  position: absolute !important;
+  margin-top: 18px !important;
+}
+.bg-image24 label,
+.bg-image24 input, 
+.bg-image24 md-select-value {
+  padding-left: 30px !important;
+}
+.bg-image24 .sico {
+  background-image: url(/img/icons.png);
+  background-size: 504px 504px !important;
+  background-repeat: no-repeat !important;
+  float: left !important;
+  position: absolute !important;
+  margin-top: 27px !important;
+}
+.ico {
+  width: 36px !important;
+  height: 36px !important;
+  background-image: url(/img/icons.png);
+  background-repeat: no-repeat !important;
+  margin-right: 5px !important;
+  background-size: 756px 756px !important;
+}
+.sico {
+  width: 24px !important;
+  height: 24px !important;
+  background-size: 504px 504px !important;
+  background-image: url(/img/icons.png);
+  background-repeat: no-repeat !important;
+  margin-right: 5px !important;
+}
+.spending1 {
+  color: green !important;
+}
+.spending-1 {
+  color: red !important;
+}
+.spending0 {
+	color: #636363 !important;
+}
+.day {
+  font-size: 35px;
+  text-align: center;
+  text-shadow: none;
+  font-weight: bold;
+  padding: 0px;
+  margin: 0px;
+}
+.day0 {
+  color: red;
+}
+.day1, .day2, .day3, .day4, .day5 {
+  color: rgba(0,0,0,0.87);
+}
+.day6{
+  color: #FF9100;
+}
+ion-avatar.savatar{
+  min-width: 2.4rem !important;
+  min-height: 2.4rem !important;
+  margin: 8px 10px 8px 0px !important;
+}
