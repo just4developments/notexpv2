@@ -1,11 +1,9 @@
 import {Component, Input, OnInit, Output, OnDestroy} from '@angular/core';
 import {ModalController, AlertController, NavController, Events, MenuController, LoadingController, Loading} from 'ionic-angular';
+import {Facebook, FacebookLoginResponse} from 'ionic-native';
 import {DataProviderService} from '../../data-provider.service';
-import {FBConnector} from './FBConnector';
 import {SetupComponent} from './';
 import {DashBoardPage} from '../dashboard';
-
-declare var FB: any;
 
 @Component({
   template: `<ion-header>
@@ -31,11 +29,8 @@ export class LoginPage implements OnDestroy {
   static isLogin:boolean;
   loader: Loading;
 
-  constructor(loadingController: LoadingController, private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){     
+  constructor(loadingController: LoadingController, private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){
     this.menuController.enable(false);
-
-    var fbCon: FBConnector = new FBConnector();
-    fbCon.initFB();
 
     LoginPage.isLogin = true;
 
@@ -118,14 +113,18 @@ export class LoginPage implements OnDestroy {
 
   loginF(){
     var self = this;
-  	FB.login(res => {
-      FB.api('/me', {fields: 'name, email'}, function(response) {
-        self.dataProviderService.login(response).subscribe(res => {
-          var user = res.json();                    
-          self.login(user, user.isNew);                 
-        });        
-      });
-    });
+    Facebook.login(['email', 'public_profile']).then(
+      (response: FacebookLoginResponse) => {
+        Facebook.api('/me', []).then((response) => {
+          self.dataProviderService.login(response).subscribe(res => {
+            var user = res.json();        
+            console.log(user);            
+            self.login(user, user.isNew);                 
+          });        
+        });
+      },
+      (error: any) => console.error(error)
+    );
   }
 
   loginG(){

@@ -6,8 +6,6 @@ import { Utils } from './utils.service';
 import { TableAbs } from './table.abs';
 import { Pref } from './pref';
 
-declare var FB:any;
-
 // const URL = 'http://api.clipvnet.com/api/savemoney';
 const URL = 'http://localhost:8001/api/savemoney';
 
@@ -50,10 +48,8 @@ export class DataProviderService {
   }
 
   logout(fcDone){
-    FB.logout(res => {
-      Pref.clear();
-      fcDone();
-    });
+    Pref.clear();
+    fcDone();
   }
 
   toList(rows: any): Array<any> {

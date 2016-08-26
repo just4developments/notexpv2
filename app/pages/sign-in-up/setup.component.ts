@@ -1,9 +1,6 @@
 import {Component, Input, OnInit, Output} from '@angular/core';
 import {ViewController, NavParams, NavController} from 'ionic-angular';
 import {DataProviderService} from '../../data-provider.service';
-import {FBConnector} from './FBConnector';
-
-declare var FB: any;
 
 @Component({
   template: `<ion-header>
