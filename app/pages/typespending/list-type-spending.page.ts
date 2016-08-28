@@ -17,7 +17,7 @@ import {UpdateTypeSpendingComponent} from './';
     <ion-list inset>
       <ion-list-header [ngClass]="['spending'+type]">
         {{type > 0 ? 'EARNING TYPE' : 'SPENDING TYPES'}}
-        <button primary (click)="add()" item-right rounded><ion-icon name="add"></ion-icon></button>      
+        <button primary (click)="add()" item-right rounded><ion-icon name="add"></ion-icon></button>
       </ion-list-header>
       <ion-item-group *ngFor="let item of typespendings; let index = index;">
         <ion-item-sliding>
@@ -58,11 +58,11 @@ class TypeSpendingTab {
 
   constructor(private navCtrl: NavController, params: NavParams, private modalController: ModalController, private alertController: AlertController, private dataProviderService: DataProviderService, private events:Events){
     var data = params.get('data');
-    this.type = params.get('type');    
+    this.type = params.get('type');
     data.forEach((e0:any)=>{
-      if(!e0.parent_id) {   
+      if(!e0.parent_id) {
         delete e0.child;
-        this.typespendings.push(e0);        
+        this.typespendings.push(e0);
       }else{
         this.typespendings.forEach((e1) => {
           if(e1.ID === e0.parent_id){
@@ -70,11 +70,11 @@ class TypeSpendingTab {
             e1.child.push(e0);
           }
         });
-      }      
+      }
     });
   }
 
-  add(parent:any, i: number){    
+  add(parent:any, i: number){
     let modal = this.modalController.create(UpdateTypeSpendingComponent, {
       icon: '-583px -448px',
       sicon: '-388.6666666666667px -298.66666666666663px',
@@ -89,13 +89,13 @@ class TypeSpendingTab {
           if(!parent.child) parent.child = [];
           parent.child.push(data);
           parent.child.sort((a, b) => {
-            return a.oder - b.oder;
+            return (a.oder - b.oder) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
           });
         }
         else {
           this.typespendings.push(data);
           this.typespendings.sort((a, b) => {
-            return a.oder - b.oder;
+            return (a.oder - b.oder) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
           });
         }
       });
@@ -110,12 +110,12 @@ class TypeSpendingTab {
         this.events.publish('sync:to');
         if(parent) {
           parent.child.sort((a, b) => {
-            return a.oder - b.oder;
+            return (a.oder - b.oder) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
           });
         }
         else {
           this.typespendings.sort((a, b) => {
-            return a.oder - b.oder;
+            return (a.oder - b.oder) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
           });
         }
       });
@@ -145,7 +145,7 @@ class TypeSpendingTab {
                 }else{
                   this.typespendings.splice(i, 1);
                 }
-              });              
+              });
             }
           }
         ]
@@ -155,8 +155,8 @@ class TypeSpendingTab {
 }
 
 @Component({
-  template: `<ion-content>    
-    <ion-tabs *ngIf="tabEarning && tabSpending">    
+  template: `<ion-content>
+    <ion-tabs *ngIf="tabEarning && tabSpending">
       <ion-tab tabIcon="leaf" tabTitle="Spending" [root]="tabSpending" [rootParams]="{view: viewController, data: spending, type: -1}"></ion-tab>
       <ion-tab tabIcon="water" tabTitle="Earning" [root]="tabEarning"  [rootParams]="{view: viewController, data: earning, type: 1}"></ion-tab>
     </ion-tabs>
@@ -170,16 +170,19 @@ export class ListTypeSpendingPage {
   spending: Array<any> = [];
 
   constructor(private navCtrl: NavController, navParams: NavParams, private dataProviderService: DataProviderService) {
-    this.dataProviderService.TypeSpending.select('WHERE removed = 0 AND (type = -1 OR type = 1) ORDER BY parent_id ASC, oder ASC').then(resp => {
-      this.dataProviderService.each(resp.res.rows, t=>{
-        if(t.type === 1){
-          this.earning.push(t);
-        }else if(t.type === -1){
-          this.spending.push(t);          
-        }
+    DataProviderService.loading(true).then(() => {
+      this.dataProviderService.TypeSpending.select('WHERE removed = 0 AND (type = -1 OR type = 1) ORDER BY parent_id ASC, oder ASC, name ASC').then(resp => {
+        this.dataProviderService.each(resp.res.rows, t=>{
+          if(t.type === 1){
+            this.earning.push(t);
+          }else if(t.type === -1){
+            this.spending.push(t);
+          }
+        });
+        this.tabEarning = TypeSpendingTab;
+        this.tabSpending = TypeSpendingTab;
+        DataProviderService.loading(false);
       });
-      this.tabEarning = TypeSpendingTab;
-      this.tabSpending = TypeSpendingTab;
     });
   }
 }

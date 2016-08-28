@@ -10,10 +10,10 @@ import {UpdateWalletComponent} from './';
       <ion-title>MANAGEMENT <small>WALLET</small></ion-title>
     </ion-navbar>
   </ion-header>
-  <ion-content>  
+  <ion-content>
     <ul class="title">
       <li>Swipe left to edit or remove item</li>
-    </ul>  
+    </ul>
     <ion-list inset *ngIf="wallets1">
       <ion-list-header>
         Available
@@ -56,18 +56,21 @@ export class ListWalletPage {
   wallets1: Array<any> = [];
   wallets0: Array<any> = [];
 
-  constructor(private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){     
-    this.dataProviderService.Wallet.select('WHERE removed = 0 ORDER BY oder ASC').then(resp => {
-      this.dataProviderService.each(resp.res.rows, t=>{
-        if(t.avail === 1){
-          this.wallets1.push(t);
-        }else if(t.avail === 0){
-          this.wallets0.push(t);
-        }else{
-          console.error('avail is not 1, 0', t);
-        }
-      });
-    },  error => { console.error(error); });
+  constructor(private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){
+    DataProviderService.loading(true).then(() => {
+      this.dataProviderService.Wallet.select('WHERE removed = 0 ORDER BY oder ASC').then(resp => {
+        this.dataProviderService.each(resp.res.rows, t=>{
+          if(t.avail === 1){
+            this.wallets1.push(t);
+          }else if(t.avail === 0){
+            this.wallets0.push(t);
+          }else{
+            console.error('avail is not 1, 0', t);
+          }
+          DataProviderService.loading(false);
+        });
+      },  error => { console.error(error); });
+    });
   }
 
   gotoCreateNew(){
@@ -83,11 +86,11 @@ export class ListWalletPage {
         var list = data.avail ? this.wallets1 : this.wallets0;
           for(var i in list){
             if(list[i].oder > data.oder){
-              list.splice(parseInt(i), 0, data);          
+              list.splice(parseInt(i), 0, data);
               break;
             }
           }
-        });      
+        });
     });
     modal.present();
   }
@@ -118,10 +121,10 @@ export class ListWalletPage {
               }else{
                 this.wallets0.splice(i, 1);
               }
-            });            
+            });
           }
         }
       ]
-    }).present();    
+    }).present();
   }
 }

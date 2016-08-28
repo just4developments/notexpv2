@@ -31,12 +31,12 @@ import {Utils} from '../../utils.service';
 			    <ion-note item-right="" [ngClass]="'spending' + item.type">
 			    	{{item.type > 0 ? '+' : (item.type < 0 ? '-' : '')}} {{item.money | convert:'number' | number}}
 			    </ion-note>
-			  </ion-item>		  
+			  </ion-item>
 		    <ion-item-options>
 		      <button primary (click)="edit(item)"><ion-icon name="create"></ion-icon></button>
 		      <button secondary (click)="remove(item, iday, idata)"><ion-icon name="trash"></ion-icon></button>
 		    </ion-item-options>
-  		</ion-item-sliding>  	
+  		</ion-item-sliding>
 		</ion-list>
 	</ion-card>`,
 	pipes: [ConvertPipe],
@@ -49,7 +49,7 @@ export class ListSpendingComponent {
 	@Output('onChange') change:EventEmitter<any> = new EventEmitter();
 
   constructor(private navCtrl: NavController, private modalController: ModalController, private alertController: AlertController, private dataProviderService:DataProviderService, private events: Events) {
-  	
+
   }
 
   remove(item: any, iday: number, idata: number){
@@ -63,7 +63,10 @@ export class ListSpendingComponent {
           	this.dataProviderService.Spending.remove(item).then(resp => {
           		this.events.publish('sync:to');
           		this.spendings[iday].data.splice(idata, 1);
-          	});            
+							if(this.spendings[iday].data.length === 0){
+								this.spendings.splice(iday, 1);
+							}
+          	});
           }
         }
       ]
@@ -73,7 +76,7 @@ export class ListSpendingComponent {
   edit(item: any){
   	let modal = this.modalController.create(SpendingPage, {item});
     modal.onDidDismiss(data => {
-      
+
     });
     modal.present();
   }

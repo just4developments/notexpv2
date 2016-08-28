@@ -8,7 +8,7 @@ import {DataProviderService} from '../../data-provider.service';
       <ion-title>Select language <small>Registing</small></ion-title>
     </ion-navbar>
   </ion-header>
-  <ion-content>     
+  <ion-content>
     <ion-grid>
       <ion-row>
         <ion-col width-100>
@@ -16,11 +16,22 @@ import {DataProviderService} from '../../data-provider.service';
             <ion-list-header>Language</ion-list-header>
             <ion-item>
               <ion-label>English</ion-label>
-              <ion-radio value="en" name="language" [checked]="language == 'en'" (click)="change('en')"></ion-radio>
+              <ion-radio value="en" name="language" [checked]="me.lang == 'en'" (click)="change('en')"></ion-radio>
             </ion-item>
             <ion-item>
               <ion-label>Vietnamese</ion-label>
-              <ion-radio value="vi" name="language" [checked]="language == 'vi'" (click)="change('vi')"></ion-radio>
+              <ion-radio value="vi" name="language" [checked]="me.lang == 'vi'" (click)="change('vi')"></ion-radio>
+            </ion-item>
+          </ion-list>
+          <ion-list radio-group>
+            <ion-list-header>Choose account</ion-list-header>
+            <ion-item>
+              <ion-label>{{me.email}}</ion-label>
+              <ion-radio [value]="me.email" name="email" (click)="pick(me.email)" [checked]="me.email == email"></ion-radio>
+            </ion-item>
+            <ion-item *ngFor="let e of me.shares">
+              <ion-label>{{e}}</ion-label>
+              <ion-radio [value]="e" name="email" (click)="pick(e)" [checked]="e == email"></ion-radio>
             </ion-item>
           </ion-list>
         </ion-col>
@@ -31,19 +42,27 @@ import {DataProviderService} from '../../data-provider.service';
   styles: []
 })
 export class SetupComponent {
-  language: string = 'vi';
   me: any;
+  email: string;
 
-  constructor(private navController:NavController, private navParams: NavParams, private dataProviderService: DataProviderService, private viewController: ViewController){     
-    this.me = navParams.get('me'); 
+  constructor(private navController:NavController, private navParams: NavParams, private dataProviderService: DataProviderService, private viewController: ViewController){
+    this.me = navParams.get('me');
+    this.me.lang = 'en';
+    this.email = this.me.email;
   }
 
   change(lang: string){
-    this.language = lang;
+    this.me.lang = lang;
+  }
+
+  pick(email: string){
+    this.email = email;
   }
 
   done(){
-    this.viewController.dismiss(this.language);
+    this.me.email = this.email;
+    this.me.lang === 'vi' ? 'VND' : 'USD'
+    this.viewController.dismiss(this.me);
   }
 
 }

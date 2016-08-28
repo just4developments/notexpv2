@@ -1,6 +1,6 @@
-import {Component, Input, OnInit, Output, OnDestroy} from '@angular/core';
-import {ModalController, AlertController, NavController, Events, MenuController, LoadingController, Loading} from 'ionic-angular';
-import {Facebook, FacebookLoginResponse} from 'ionic-native';
+import {Component, OnDestroy} from '@angular/core';
+import {ModalController, AlertController, NavController, Events, MenuController} from 'ionic-angular';
+import {Facebook, FacebookLoginResponse, GooglePlus} from 'ionic-native';
 import {DataProviderService} from '../../data-provider.service';
 import {SetupComponent} from './';
 import {DashBoardPage} from '../dashboard';
@@ -11,15 +11,15 @@ import {DashBoardPage} from '../dashboard';
       <ion-title>LOGIN <small>NOTEXPV2</small></ion-title>
     </ion-navbar>
   </ion-header>
-  <ion-content>     
-    <ion-grid>      
+  <ion-content>
+    <ion-grid>
       <ion-row>
         <ion-col width-50 align="center">
           <button (click)="loginF()" fab><ion-icon name="logo-facebook"></ion-icon></button>
         </ion-col>
         <ion-col width-50 align="center">
           <button (click)="loginG()" fab danger><ion-icon name="logo-googleplus"></ion-icon></button>
-        </ion-col>        
+        </ion-col>
       </ion-row>
     </ion-grid>
   </ion-content>`,
@@ -27,9 +27,8 @@ import {DashBoardPage} from '../dashboard';
 })
 export class LoginPage implements OnDestroy {
   static isLogin:boolean;
-  loader: Loading;
 
-  constructor(loadingController: LoadingController, private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){
+  constructor(private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){
     this.menuController.enable(false);
 
     LoginPage.isLogin = true;
@@ -42,10 +41,6 @@ export class LoginPage implements OnDestroy {
     this.events.subscribe('synced:to', data => {
       console.log(`Synced ${data[0]} records to server`);
       this.loginDone();
-    });
-
-    this.loader = loadingController.create({
-      content: "Please wait..."
     });
 
   }
@@ -79,26 +74,23 @@ export class LoginPage implements OnDestroy {
     });
   }
 
-  login(user, isFirst){
-    // user.email = 'have.ice@gmail.com';    
-    var self = this;
+  login(user: any, isFirst: boolean){
     let modal = this.modalController.create(SetupComponent, {me: user});
-    modal.onDidDismiss(lang => {
-      this.loader.present();
-      user.lang = lang;
-      user.symb = user.lang === 'vi' ? 'VND' : 'USD';  
-      this.dataProviderService.setMe(user);
-      this.init(() => {
-        if(isFirst){
-          this.install(user.lang, () => {
-            this.events.publish('sync:to');
-          });
-        }else{
-          this.events.publish('sync:from');
-        }        
-      });   
-
-    });    
+    modal.onDidDismiss(me => {
+      DataProviderService.loading(true).then(()=>{
+        user = me;
+        this.dataProviderService.setMe(user);
+        this.init(() => {
+          if (isFirst){
+            this.install(user.lang, () => {
+              this.events.publish('sync:to');
+            });
+          }else{
+            this.events.publish('sync:from');
+          }
+        });
+      });
+    });
     modal.present();
   }
 
@@ -107,8 +99,9 @@ export class LoginPage implements OnDestroy {
   }
 
   loginDone(){
-    this.loader.dismiss();
-    if(LoginPage.isLogin) this.navController.setRoot(DashBoardPage);
+    DataProviderService.loading(false).then(()=>{
+      if(LoginPage.isLogin) this.navController.setRoot(DashBoardPage);
+    });
   }
 
   loginF(){
@@ -116,11 +109,11 @@ export class LoginPage implements OnDestroy {
     Facebook.login(['email', 'public_profile']).then(
       (response: FacebookLoginResponse) => {
         Facebook.api('/me', []).then((response) => {
+          console.log(response);
           self.dataProviderService.login(response).subscribe(res => {
-            var user = res.json();        
-            console.log(user);            
-            self.login(user, user.isNew);                 
-          });        
+            var user = res.json();
+            self.login(user, user.isNew);
+          });
         });
       },
       (error: any) => console.error(error)
@@ -128,7 +121,19 @@ export class LoginPage implements OnDestroy {
   }
 
   loginG(){
-    
+    var self = this;
+    console.log('Login google');
+    console.log(GooglePlus);
+    GooglePlus.login().then(
+      (response: any) => {        
+        console.log('res', response);
+        // self.dataProviderService.login(response).subscribe(res => {
+        //   var user = res.json();
+        //   self.login(user, user.isNew);
+        // });
+      },
+      (error: any) => console.error('Err', error)
+    );
   }
 
   onPageWillLeave() {

@@ -1,13 +1,13 @@
 import { Injectable }     from '@angular/core';
 import { Http, Response, Headers, RequestOptions } from '@angular/http';
 import { Observable }     from 'rxjs/Observable';
-import { Storage, SqlStorage } from 'ionic-angular';
+import { Storage, SqlStorage, Loading, LoadingController } from 'ionic-angular';
 import { Utils } from './utils.service';
 import { TableAbs } from './table.abs';
 import { Pref } from './pref';
 
-// const URL = 'http://api.clipvnet.com/api/savemoney';
-const URL = 'http://localhost:8001/api/savemoney';
+const URL = 'http://api.clipvnet.com/api/savemoney';
+// const URL = 'http://localhost:8001/api/savemoney';
 
 @Injectable()
 export class DataProviderService {
@@ -18,6 +18,8 @@ export class DataProviderService {
   storage: Storage;
   static me: any;
   static clientID: string;
+  private static loader: Loading;
+  private static loadingController: LoadingController;
 
   // public static me: any = {
   //   email: 'test@gmail',
@@ -25,18 +27,31 @@ export class DataProviderService {
   //   symb: 'VND'
   // };
 
-  constructor (private http: Http) {
+  constructor (private http: Http, loadingController: LoadingController) {
     this.storage = new Storage(SqlStorage);
     this.Wallet = new Wallet(this.storage, this.http);
     this.Spending = new Spending(this.storage, this.http);
-    this.TypeSpending = new TypeSpending(this.storage, this.http);    
+    this.TypeSpending = new TypeSpending(this.storage, this.http);
     if(Pref.has('me')) {
       DataProviderService.clientID = Pref.getItem('clientID');
-      DataProviderService.me = Pref.getObject('me');      
+      DataProviderService.me = Pref.getObject('me');
+    }
+    DataProviderService.loadingController = loadingController;
+  }
+
+  static loading(isShow: boolean){
+    if(isShow) {
+      DataProviderService.loader = DataProviderService.loadingController.create({
+        content: "Please wait..."
+      });
+      return DataProviderService.loader.present();
+    }else {
+      return DataProviderService.loader.dismiss();
     }
   }
 
   setMe(user: any){
+    if(!user.shares) user.shares = [];
     DataProviderService.me = user;
     DataProviderService.clientID = new Date().getTime().toString();
     Pref.setObject('me', DataProviderService.me);
@@ -50,6 +65,18 @@ export class DataProviderService {
   logout(fcDone){
     Pref.clear();
     fcDone();
+  }
+
+  share(email: string, fcDone: Function){
+    this.http.post(`${URL}/share`, {email: email}, new RequestOptions({ headers: new Headers({ 'OAuth': DataProviderService.me.email })})).subscribe(res => {
+      fcDone(res.json());
+    });
+  }
+
+  noshare(email: string, fcDone: Function){
+    this.http.delete(`${URL}/share/${email}`, new RequestOptions({ headers: new Headers({ 'OAuth': DataProviderService.me.email })})).subscribe(res => {
+      fcDone(res.json());
+    });
   }
 
   toList(rows: any): Array<any> {
@@ -85,7 +112,7 @@ export class DataProviderService {
 }
 
 class Wallet extends TableAbs {
-  
+
   constructor(storage:Storage, http: Http) {
     super(storage, http, 'Wallet', 'ID', ['ID', 'name', 'icon', 'sicon', 'money', 'avail', 'server_id', 'symb', 'is_sync', 'email', 'removed', 'oder', '_id']);
   }
@@ -95,23 +122,23 @@ class Wallet extends TableAbs {
       this.storage.query("CREATE TABLE IF NOT EXISTS Wallet       (ID TEXT PRIMARY KEY, name TEXT, icon TEXT, sicon TEXT, money REAL DEFAULT 0, avail INTEGER DEFAULT 1, server_id INTEGER, symb TEXT, is_sync NUMBER DEFAULT 0, email TEXT, removed INTEGER DEFAULT 0, oder DEFAULT 1, _id TEXT)").then(() => {
         fcDone();
       });
-    });    
+    });
   }
 
   install(lang: any, fcDone: Function){
     var datas:any = {
       en: [
         {name: 'Wallet', icon: [8, 9], avail: 1, money: 0, oder: 1},
-        {name: 'ATM', icon: [8, 6], avail: 1, money: 0,  oder: 2}, 
+        {name: 'ATM', icon: [8, 6], avail: 1, money: 0,  oder: 2},
         {name: 'Saving', icon: [6, 3], avail: 0, money: 0, oder: 3}
       ],
       vi: [
         {name: 'Ví tiền', icon: [8, 9], avail: 1, money: 0, oder: 1},
-        {name: 'ATM', icon: [8, 6], avail: 1, money: 0, oder: 2}, 
+        {name: 'ATM', icon: [8, 6], avail: 1, money: 0, oder: 2},
         {name: 'Tạm để giành', icon: [0, 11], avail: 0, money: 0, oder: 3},
         {name: 'Tiền tiết kiệm', icon: [6, 3], avail: 0, money: 0, oder: 4}
       ]
-    };    
+    };
     datas = datas[lang];
     for(var i in datas){
       datas[i].sicon = TableAbs.getIcon(datas[i].icon, true);
@@ -125,7 +152,7 @@ class Wallet extends TableAbs {
     time = time === undefined ? (Pref.getItem('sync.wallet.from') || 0) : time;
     this.http.get(`${URL}/wallet?page=${page}&rows=${rows}&time=${time}`, new RequestOptions({ headers: new Headers({ 'OAuth': DataProviderService.me.email })})).subscribe(res => {
       var data = res.json();
-      if(data.length === 0) return fcDone((page-1) * rows);      
+      if(data.length === 0) return fcDone((page-1) * rows);
       this.addFromServer(data).then(rs => {
         if(data.length > 0 && page === 1) Pref.setItem('sync.wallet.from', data[0].updatedAt);
         if(data.length < rows) fcDone((page-1) * rows + data.length);
@@ -152,7 +179,7 @@ class Wallet extends TableAbs {
             return e;
           }), () => {
             fcDone0(idata.length);
-          });        
+          });
         });
       };
       var updateData = (fcDone0) => {
@@ -162,7 +189,7 @@ class Wallet extends TableAbs {
             return e;
           }), () => {
             fcDone0(udata.length);
-          });        
+          });
         });
       }
       if(idata.length > 0){
@@ -203,7 +230,7 @@ class Wallet extends TableAbs {
       e.ID = Utils.getUID();
       e.email = DataProviderService.me.email;
       e.is_sync = 0;
-      e.symb = DataProviderService.me.symb; 
+      e.symb = DataProviderService.me.symb;
       return e;
     }));
   }
@@ -224,14 +251,14 @@ class Wallet extends TableAbs {
 }
 
 class Spending extends TableAbs {
-  
+
   constructor(storage:Storage, http: Http) {
     super(storage, http, 'Spending', 'ID', ['ID', 'money', 'created_date', 'created_day', 'created_month', 'created_year', 'type_spending_id', 'wallet_id', 'des', 'udes', 'type', 'is_report', 'server_id', 'is_sync', 'email', 'removed', '_id']);
   }
 
   init(fcDone: Function){
     this.storage.query("DROP TABLE IF EXISTS Spending").then(() => {
-      this.storage.query("CREATE TABLE IF NOT EXISTS Spending     (ID TEXT PRIMARY KEY, money REAL, created_date INTEGER, created_day INTEGER, created_month INTEGER, created_year INTEGER, type_spending_id TEXT, wallet_id TEXT, des TEXT, udes TEXT, type INTEGER  DEFAULT -1, is_report INTEGER default 1, server_id INTEGER, is_sync NUMBER DEFAULT 0, email TEXT, removed INTEGER DEFAULT 0, _id TEXT)").then(() => {        
+      this.storage.query("CREATE TABLE IF NOT EXISTS Spending     (ID TEXT PRIMARY KEY, money REAL, created_date INTEGER, created_day INTEGER, created_month INTEGER, created_year INTEGER, type_spending_id TEXT, wallet_id TEXT, des TEXT, udes TEXT, type INTEGER  DEFAULT -1, is_report INTEGER default 1, server_id INTEGER, is_sync NUMBER DEFAULT 0, email TEXT, removed INTEGER DEFAULT 0, _id TEXT)").then(() => {
         fcDone();
       });
     });
@@ -241,7 +268,7 @@ class Spending extends TableAbs {
     time = time === undefined ? (Pref.getItem('sync.spending.from') || 0) : time;
     this.http.get(`${URL}/spending?page=${page}&rows=${rows}&time=${time}`, new RequestOptions({ headers: new Headers({ 'OAuth': DataProviderService.me.email })})).subscribe(res => {
       var data = res.json();
-      if(data.length === 0) return fcDone((page-1) * rows);      
+      if(data.length === 0) return fcDone((page-1) * rows);
       this.addFromServer(data).then(rs => {
         if(data.length > 0 && page === 1) Pref.setItem('sync.spending.from', data[0].updatedAt);
         if(data.length < rows) fcDone((page-1) * rows + data.length);
@@ -268,7 +295,7 @@ class Spending extends TableAbs {
             return e;
           }), () => {
             fcDone0(idata.length);
-          });        
+          });
         });
       };
       var updateData = (fcDone0) => {
@@ -278,7 +305,7 @@ class Spending extends TableAbs {
             return e;
           }), () => {
             fcDone0(udata.length);
-          });        
+          });
         });
       }
       if(idata.length > 0){
@@ -319,8 +346,8 @@ class Spending extends TableAbs {
     item.is_sync = 0;
     item.removed = 0;
     item.des = item.des || null;
-    item.is_report = item.is_report ? 1 : 0;    
-    return super._add(item);    
+    item.is_report = item.is_report ? 1 : 0;
+    return super._add(item);
   }
 
   update(item: any){
@@ -335,11 +362,11 @@ class Spending extends TableAbs {
       return super._update({ID: item.ID, is_sync: 0, removed: 1});
     }
   }
-  
+
 }
 
 class TypeSpending extends TableAbs {
-  
+
   constructor(storage:Storage, http: Http) {
     super(storage, http, 'TypeSpending', 'ID', ['ID', 'name', 'icon', 'sicon', 'parent_id', 'type', 'oder', 'server_id', 'is_sync', 'email', 'removed', '_id']);
   }
@@ -349,7 +376,7 @@ class TypeSpending extends TableAbs {
       this.storage.query("CREATE TABLE IF NOT EXISTS TypeSpending (ID TEXT PRIMARY KEY, name TEXT, icon TEXT, sicon TEXT, parent_id TEXT, type INTEGER  DEFAULT -1, oder INTEGER DEFAULT 1000, server_id INTEGER, is_sync NUMBER DEFAULT 0, email TEXT, removed INTEGER DEFAULT 0, _id TEXT)").then(() => {
         fcDone();
       });
-    });   
+    });
   }
 
   install(lang: any, fcDone:Function){
@@ -362,10 +389,10 @@ class TypeSpending extends TableAbs {
         { oder: 1, name: 'Update wallet', icon: [0, 10], type: 0},
 
         // TypeEarning
-        { oder: 1, name: 'Lương', icon: [9, 2], type: 1, 
+        { oder: 1, name: 'Lương', icon: [9, 2], type: 1,
           inner: [
             { oder: 2, name: 'Thưởng', icon: [7, 9], type: 1 }
-          ] 
+          ]
         },
         { oder: 3, name: 'Bán hàng', icon: [10, 0], type: 1 },
         { oder: 4, name: 'Được cho', icon: [6, 11], type: 1 },
@@ -376,7 +403,7 @@ class TypeSpending extends TableAbs {
         { oder: 1, name: 'Gia đình', icon: [9, 10], type: -1,
           inner: [
             { oder: 2, name: 'Con cái', icon: [10, 6], type: -1 }
-          ] 
+          ]
         },
         { oder: 3, name: 'Điện & nước & internet', icon: [12, 6], type: -1 },
         { oder: 3, name: 'Ăn uống', icon: [1, 0], type: -1 },
@@ -388,7 +415,7 @@ class TypeSpending extends TableAbs {
         { oder: 10, name: 'Đi lại', icon: [1, 2], type: -1 },
         { oder: 10, name: 'Cho vay', icon: [6, 10], type: -1 },
         { oder: 100, name: 'Khoản chi phí khác', icon: [1, 4], type: -1 }
-      ], 
+      ],
       en: [
         // TypeOthers
         { oder: 1, name: 'Received from wallet', icon: [9, 11], type: 0},
@@ -397,10 +424,10 @@ class TypeSpending extends TableAbs {
         { oder: 1, name: 'Update wallet', icon: [0, 10], type: 0},
 
         // TypeEarning
-        { oder: 1, name: 'Salary', icon: [9, 2], type: 1, 
+        { oder: 1, name: 'Salary', icon: [9, 2], type: 1,
           inner: [
             { oder: 2, name: 'Bonus', icon: [7, 9], type: 1 }
-          ] 
+          ]
         },
         { oder: 3, name: 'Selling', icon: [10, 0], type: 1 },
         { oder: 4, name: 'Gifts', icon: [6, 11], type: 1 },
@@ -408,10 +435,10 @@ class TypeSpending extends TableAbs {
         { oder: 100, name: 'Other Income', icon: [1, 4], type: 1 },
 
         // TypeSpending
-        { oder: 1, name: 'Family', icon: [9, 10], type: -1, 
+        { oder: 1, name: 'Family', icon: [9, 10], type: -1,
           inner: [
             { oder: 2, name: 'Children', icon: [10, 6], type: -1 }
-          ] 
+          ]
         },
         { oder: 3, name: 'Electric - Water - Internet', icon: [12, 6], type: -1 },
         { oder: 3, name: 'Food - Beverage', icon: [1, 0], type: -1 },
@@ -424,7 +451,7 @@ class TypeSpending extends TableAbs {
         { oder: 10, name: 'Loan', icon: [6, 10], type: -1 },
         { oder: 100, name: 'Other Expendse', icon: [1, 4], type: -1 }
       ]
-    };    
+    };
     datas = datas[lang];
     var data:Array<any> = [];
     for(var data0 of datas){
@@ -447,13 +474,13 @@ class TypeSpending extends TableAbs {
     }
     this.add(datas).then(fcDone());
   }
-  
-  syncFrom(page: number, rows: number, fcDone: Function, time?: any){    
+
+  syncFrom(page: number, rows: number, fcDone: Function, time?: any){
     time = time === undefined ? (Pref.getItem('sync.typespending.from') || 0) : time;
     this.http.get(`${URL}/typespending?page=${page}&rows=${rows}&time=${time}`, new RequestOptions({ headers: new Headers({ 'OAuth': DataProviderService.me.email })})).subscribe(res => {
       var data = res.json();
-      if(data.length === 0) return fcDone((page-1) * rows);      
-      this.addFromServer(data).then(rs => {        
+      if(data.length === 0) return fcDone((page-1) * rows);
+      this.addFromServer(data).then(rs => {
         if(data.length > 0 && page === 1) Pref.setItem('sync.typespending.from', data[0].updatedAt);
         if(data.length < rows) fcDone((page-1) * rows + data.length);
         else this.syncFrom(page+1, rows, fcDone, time);
@@ -479,7 +506,7 @@ class TypeSpending extends TableAbs {
             return e;
           }), () => {
             fcDone0(idata.length);
-          });        
+          });
         });
       };
       var updateData = (fcDone0) => {
@@ -489,7 +516,7 @@ class TypeSpending extends TableAbs {
             return e;
           }), () => {
             fcDone0(udata.length);
-          });        
+          });
         });
       }
       if(idata.length > 0){
