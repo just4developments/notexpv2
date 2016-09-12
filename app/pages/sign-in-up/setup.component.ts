@@ -26,12 +26,8 @@ import {DataProviderService} from '../../data-provider.service';
           <ion-list radio-group>
             <ion-list-header>Choose account</ion-list-header>
             <ion-item>
-              <ion-label>{{me.email}}</ion-label>
-              <ion-radio [value]="me.email" name="email" (click)="pick(me.email)" [checked]="me.email == email"></ion-radio>
-            </ion-item>
-            <ion-item *ngFor="let e of me.shares">
-              <ion-label>{{e}}</ion-label>
-              <ion-radio [value]="e" name="email" (click)="pick(e)" [checked]="e == email"></ion-radio>
+              <ion-label>Description</ion-label>
+              <ion-input [(ngModel)]="me.email" ></ion-input>
             </ion-item>
           </ion-list>
         </ion-col>
@@ -43,25 +39,18 @@ import {DataProviderService} from '../../data-provider.service';
 })
 export class SetupComponent {
   me: any;
-  email: string;
 
-  constructor(private navController:NavController, private navParams: NavParams, private dataProviderService: DataProviderService, private viewController: ViewController){
+  constructor(private navController: NavController, private navParams: NavParams, private dataProviderService: DataProviderService, private viewController: ViewController) {
     this.me = navParams.get('me');
-    this.me.lang = 'en';
-    this.email = this.me.email;
+    this.me.lang = 'vi';
   }
 
-  change(lang: string){
+  change(lang: string) {
     this.me.lang = lang;
   }
 
-  pick(email: string){
-    this.email = email;
-  }
-
-  done(){
-    this.me.email = this.email;
-    this.me.lang === 'vi' ? 'VND' : 'USD'
+  done() {
+    this.me.lang === 'vi' ? 'VND' : 'USD';
     this.viewController.dismiss(this.me);
   }
 

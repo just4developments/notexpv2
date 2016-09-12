@@ -21,7 +21,7 @@ import {SharePage} from './pages/share';
         <!--button ion-item (click)="goto(1)">Spending today ?</button-->
         <button ion-item (click)="goto(2)">Type Spending</button>
         <button ion-item (click)="goto(3)">Wallet</button>
-        <button ion-item (click)="goto(4)">Share</button>
+        <!--<button ion-item (click)="goto(4)">Share</button>-->
         <button ion-item (click)="logout()">Logout</button>
       </ion-list>
     </ion-content>

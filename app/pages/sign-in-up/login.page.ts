@@ -26,9 +26,9 @@ import {DashBoardPage} from '../dashboard';
   styles: ['button {position: initial; padding: 40px}', 'ion-icon {font-size: 3em;}']
 })
 export class LoginPage implements OnDestroy {
-  static isLogin:boolean;
+  static isLogin: boolean;
 
-  constructor(private menuController: MenuController, private navController:NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events){
+  constructor(private menuController: MenuController, private navController: NavController, private alertController: AlertController, private dataProviderService: DataProviderService, private modalController: ModalController, private events: Events) {
     this.menuController.enable(false);
 
     LoginPage.isLogin = true;
@@ -45,13 +45,13 @@ export class LoginPage implements OnDestroy {
 
   }
 
-  ngOnDestroy(){
+  ngOnDestroy() {
     delete LoginPage.isLogin;
-    this.events.unsubscribe('synced:from', () => {});
-    this.events.unsubscribe('synced:to', () => {});
+    this.events.unsubscribe('synced:from', () => { });
+    this.events.unsubscribe('synced:to', () => { });
   }
 
-  init(fcDone: Function){
+  init(fcDone: Function) {
     this.dataProviderService.Wallet.init(() => {
       console.log('Wallet scheme created');
       this.dataProviderService.TypeSpending.init(() => {
@@ -64,7 +64,7 @@ export class LoginPage implements OnDestroy {
     });
   }
 
-  install(lang:string, fcDone: Function){
+  install(lang: string, fcDone: Function) {
     this.dataProviderService.Wallet.install(lang, () => {
       console.log('Wallet installed');
       this.dataProviderService.TypeSpending.install(lang, () => {
@@ -74,18 +74,18 @@ export class LoginPage implements OnDestroy {
     });
   }
 
-  login(user: any, isFirst: boolean){
-    let modal = this.modalController.create(SetupComponent, {me: user});
+  login(user: any, isFirst: boolean) {
+    let modal = this.modalController.create(SetupComponent, { me: user });
     modal.onDidDismiss(me => {
-      DataProviderService.loading(true).then(()=>{
+      DataProviderService.loading(true).then(() => {
         user = me;
         this.dataProviderService.setMe(user);
         this.init(() => {
-          if (isFirst){
+          if (isFirst) {
             this.install(user.lang, () => {
               this.events.publish('sync:to');
             });
-          }else{
+          } else {
             this.events.publish('sync:from');
           }
         });
@@ -94,21 +94,21 @@ export class LoginPage implements OnDestroy {
     modal.present();
   }
 
-  reLogin(user){
+  reLogin(user) {
     this.events.publish('sync:from');
   }
 
-  loginDone(){
-    DataProviderService.loading(false).then(()=>{
-      if(LoginPage.isLogin) this.navController.setRoot(DashBoardPage);
+  loginDone() {
+    DataProviderService.loading(false).then(() => {
+      if (LoginPage.isLogin) this.navController.setRoot(DashBoardPage);
     });
   }
 
-  loginF(){
+  loginF() {
     var self = this;
     Facebook.login(['email', 'public_profile']).then(
       (response: FacebookLoginResponse) => {
-        Facebook.api('/me', []).then((response) => {
+        Facebook.api('/me?fields=email', ['email', 'public_profile']).then((response) => {
           console.log(response);
           self.dataProviderService.login(response).subscribe(res => {
             var user = res.json();
@@ -120,12 +120,12 @@ export class LoginPage implements OnDestroy {
     );
   }
 
-  loginG(){
+  loginG() {
     var self = this;
     console.log('Login google');
     console.log(GooglePlus);
     GooglePlus.login().then(
-      (response: any) => {        
+      (response: any) => {
         console.log('res', response);
         // self.dataProviderService.login(response).subscribe(res => {
         //   var user = res.json();
